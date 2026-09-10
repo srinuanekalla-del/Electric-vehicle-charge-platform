@@ -1,0 +1,42 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Station Details - EVCharge</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar" class="navbar"></div>
+<div class="container">
+  <a href="stations.html" style="font-size:0.9rem;color:#64748b;text-decoration:none;">&larr; Back</a>
+  <div id="station-info" class="card mt-16"><p class="empty-state">Loading...</p></div>
+  <h3>Select a Charger</h3>
+  <div id="chargers-list"></div>
+</div>
+<script src="js/api.js"></script>
+<script>
+requireAuth(); renderNavbar("stations");
+const params = new URLSearchParams(window.location.search);
+const stationId = params.get("id");
+
+async function loadStation() {
+  const infoEl = document.getElementById("station-info");
+  const chargersEl = document.getElementById("chargers-list");
+  try {
+    const s = await api.get(`/stations/${stationId}/`);
+    infoEl.innerHTML = `
+      <h2 style="margin:0 0 4px;">${s.name}</h2>
+      <p style="color:#64748b;">📍 ${s.location}, ${s.city}</p>
+      <p style="color:#64748b;">🕒 Operating hours: ${s.operating_hours}</p>
+      <span class="badge badge-${s.status.toLowerCase()}">${s.status}</span>
+    `;
+    if (!s.chargers.length) { chargersEl.innerHTML = `<p class="empty-state">No chargers here yet.</p>`; return; }
+    chargersEl.innerHTML = s.chargers.map(c => `
+      <div class="card card-row">
+        <div><strong>${c.charger_label}</strong> · ${c.connector_type} · ${c.power_kw} kW
+          <div style="color:#64748b;font-size:0.85rem;">₹${c.price_per_kwh}/kWh</div></div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="badge badge-${c.status}">${c.status}</span>
+          <a href="book.html?charger_id=${c.id}&station=${encodeURIComponent(s.name)}&label=${encodeURIComponent(c.charger_label)}&rate=${c.price_per_kwh}&power=${c.power_kw}"
+             class="btn btn-primary" style="${c.status !== 'available' ? 'pointer-events:none;opacity:0.5;' : ''}">Select Charger</a>
+        </div>
+      </div>`).join("");
+  } catch (err) { infoEl.innerHTML = `<p class="error-msg">${extractErrorMessage(err)}</p>`; }
+}
+loadStation();
+</script>
+</body></html>

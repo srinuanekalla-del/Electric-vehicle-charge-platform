@@ -1,0 +1,30 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Login - EVCharge</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar" class="navbar"></div>
+<div class="card form-card">
+  <h2 class="page-title">Welcome back</h2>
+  <form id="login-form">
+    <div class="form-group"><label>Username</label><input type="text" id="username" required></div>
+    <div class="form-group"><label>Password</label><input type="password" id="password" required></div>
+    <button type="submit" class="btn btn-primary btn-block">Login</button>
+    <div id="error" class="error-msg"></div>
+  </form>
+  <p class="text-center mt-16">Don't have an account? <a href="signup.html">Sign up</a></p>
+</div>
+<script src="js/api.js"></script>
+<script>
+renderNavbar();
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById("error"); errorEl.textContent = "";
+  try {
+    const data = await api.post("/accounts/login/", {
+      username: document.getElementById("username").value.trim(),
+      password: document.getElementById("password").value,
+    }, { auth: false });
+    api.setTokens(data.access, data.refresh);
+    window.location.href = "stations.html";
+  } catch (err) { errorEl.textContent = extractErrorMessage(err); }
+});
+</script>
+</body></html>

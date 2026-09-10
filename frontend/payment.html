@@ -1,0 +1,54 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Payment - EVCharge</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar" class="navbar"></div>
+<div class="container" style="max-width:480px;">
+  <div class="step-indicator"><span>Date & Time</span> &rarr; <span class="active">Payment</span> &rarr; <span>Confirmation</span></div>
+  <div class="card">
+    <h2 class="page-title">Booking Summary</h2>
+    <div id="summary"><p class="empty-state">Loading...</p></div>
+
+    <div class="form-group mt-16">
+      <label>Payment Method</label>
+      <select id="method">
+        <option value="card">Credit/Debit Card</option>
+        <option value="upi">UPI</option>
+        <option value="wallet">Wallet</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="confirmPayment()">Confirm Payment</button>
+    <div id="error" class="error-msg"></div>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+requireAuth(); renderNavbar("stations");
+const params = new URLSearchParams(window.location.search);
+const bookingId = params.get("booking_id");
+
+async function loadSummary() {
+  try {
+    const b = await api.get(`/bookings/${bookingId}/`);
+    document.getElementById("summary").innerHTML = `
+      <div class="card-row"><span>Station</span><strong>${b.station_name}</strong></div>
+      <div class="card-row" style="margin-top:8px;"><span>Charger</span><strong>${b.charger_label}</strong></div>
+      <div class="card-row" style="margin-top:8px;"><span>Date</span><strong>${b.booking_date}</strong></div>
+      <div class="card-row" style="margin-top:8px;"><span>Time</span><strong>${b.start_time} (${b.duration_minutes} min)</strong></div>
+      <div class="card-row" style="margin-top:8px;border-top:1px solid #e2e8f0;padding-top:8px;">
+        <span>Total Amount</span><strong style="font-size:1.2rem;">₹${b.estimated_price}</strong></div>
+    `;
+  } catch (err) { document.getElementById("summary").innerHTML = `<p class="error-msg">${extractErrorMessage(err)}</p>`; }
+}
+loadSummary();
+
+async function confirmPayment() {
+  const errorEl = document.getElementById("error"); errorEl.textContent = "";
+  try {
+    const payment = await api.post("/payments/", {
+      booking_id: bookingId, method: document.getElementById("method").value,
+    });
+    window.location.href = `confirmation.html?booking_id=${bookingId}`;
+  } catch (err) { errorEl.textContent = extractErrorMessage(err); }
+}
+</script>
+</body></html>

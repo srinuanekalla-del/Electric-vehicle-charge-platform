@@ -1,0 +1,69 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Book Slot - EVCharge</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar" class="navbar"></div>
+<div class="container" style="max-width:480px;">
+  <div class="step-indicator">
+    <span class="active">Date & Time</span> &rarr; <span>Confirm</span> &rarr; <span>Payment</span>
+  </div>
+  <div class="card">
+    <h2 class="page-title" id="charger-heading">Select Date & Time</h2>
+    <p class="page-subtitle" id="charger-sub"></p>
+
+    <div class="form-group"><label>Date</label><input type="date" id="booking-date" required></div>
+    <div class="form-group"><label>Start Time</label><input type="time" id="start-time" required></div>
+    <div class="form-group">
+      <label>Duration</label>
+      <select id="duration">
+        <option value="30">30 minutes</option>
+        <option value="60" selected>1 hour</option>
+        <option value="90">1.5 hours</option>
+        <option value="120">2 hours</option>
+      </select>
+    </div>
+
+    <div class="card" style="background:#f1f5f9;">
+      <div class="card-row"><span>Estimated Price</span><strong id="estimated-price">₹0.00</strong></div>
+    </div>
+
+    <button class="btn btn-primary btn-block mt-16" onclick="submitBooking()">Book Charging Slot</button>
+    <div id="error" class="error-msg"></div>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+requireAuth(); renderNavbar("stations");
+const params = new URLSearchParams(window.location.search);
+const chargerId = params.get("charger_id");
+const rate = parseFloat(params.get("rate"));
+const power = parseFloat(params.get("power"));
+
+document.getElementById("charger-heading").textContent = `${params.get("label")} at ${params.get("station")}`;
+document.getElementById("charger-sub").textContent = `₹${rate}/kWh · ${power} kW`;
+
+function updatePrice() {
+  const minutes = parseInt(document.getElementById("duration").value);
+  const hours = minutes / 60;
+  const price = (rate * power * hours).toFixed(2);
+  document.getElementById("estimated-price").textContent = `₹${price}`;
+}
+document.getElementById("duration").addEventListener("change", updatePrice);
+updatePrice();
+
+async function submitBooking() {
+  const errorEl = document.getElementById("error"); errorEl.textContent = "";
+  const date = document.getElementById("booking-date").value;
+  const time = document.getElementById("start-time").value;
+  const duration = document.getElementById("duration").value;
+
+  if (!date || !time) { errorEl.textContent = "Please select date and time."; return; }
+
+  try {
+    const booking = await api.post("/bookings/", {
+      charger: chargerId, booking_date: date,
+      start_time: time + ":00", duration_minutes: parseInt(duration),
+    });
+    window.location.href = `payment.html?booking_id=${booking.id}`;
+  } catch (err) { errorEl.textContent = extractErrorMessage(err); }
+}
+</script>
+</body></html>

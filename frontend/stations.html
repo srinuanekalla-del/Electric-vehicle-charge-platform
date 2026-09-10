@@ -1,0 +1,37 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Find Stations - EVCharge</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar" class="navbar"></div>
+<div class="container">
+  <h2 class="page-title">Find Charging Stations</h2>
+  <p class="page-subtitle">Search by city or station name.</p>
+  <div class="card"><input type="text" id="search-input" placeholder="Search by city or station name..." style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;"></div>
+  <div id="stations-list" class="mt-16"><p class="empty-state">Loading...</p></div>
+</div>
+<script src="js/api.js"></script>
+<script>
+requireAuth(); renderNavbar("stations");
+const listEl = document.getElementById("stations-list");
+let timer = null;
+async function load(query = "") {
+  listEl.innerHTML = `<p class="empty-state">Loading...</p>`;
+  try {
+    const stations = await api.get(query ? `/stations/?search=${encodeURIComponent(query)}` : "/stations/");
+    if (!stations.length) { listEl.innerHTML = `<p class="empty-state">No stations found.</p>`; return; }
+    listEl.innerHTML = stations.map(s => `
+      <div class="card card-row">
+        <div><h3 style="margin:0 0 4px;">${s.name}</h3>
+          <div style="color:#64748b;font-size:0.85rem;">📍 ${s.location}, ${s.city}</div></div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="badge badge-${s.status.toLowerCase()}">${s.status}</span>
+          <a href="station-detail.html?id=${s.id}" class="btn btn-primary">View</a>
+        </div>
+      </div>`).join("");
+  } catch (err) { listEl.innerHTML = `<p class="error-msg">${extractErrorMessage(err)}</p>`; }
+}
+document.getElementById("search-input").addEventListener("input", (e) => {
+  clearTimeout(timer);
+  timer = setTimeout(() => load(e.target.value), 300);
+});
+load();
+</script>
+</body></html>

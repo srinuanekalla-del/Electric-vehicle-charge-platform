@@ -1,0 +1,34 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>My Bookings - EVCharge</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar" class="navbar"></div>
+<div class="container">
+  <h2 class="page-title">My Bookings</h2>
+  <div id="bookings-list"><p class="empty-state">Loading...</p></div>
+</div>
+<script src="js/api.js"></script>
+<script>
+requireAuth(); renderNavbar("bookings");
+async function load() {
+  const listEl = document.getElementById("bookings-list");
+  try {
+    const bookings = await api.get("/bookings/");
+    if (!bookings.length) { listEl.innerHTML = `<p class="empty-state">No bookings yet. <a href="stations.html">Find a station</a>.</p>`; return; }
+    listEl.innerHTML = bookings.map(b => `
+      <div class="card card-row">
+        <div><h3 style="margin:0 0 4px;">${b.station_name} — ${b.charger_label}</h3>
+          <div style="color:#64748b;font-size:0.85rem;">${b.booking_date} at ${b.start_time} · ₹${b.estimated_price}</div></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge badge-${b.status}">${b.status}</span>
+          ${b.status === "pending" ? `<a href="payment.html?booking_id=${b.id}" class="btn btn-primary">Pay Now</a>` : ""}
+          ${["pending","confirmed"].includes(b.status) ? `<button class="btn btn-outline" onclick="cancelBooking(${b.id})">Cancel</button>` : ""}
+        </div>
+      </div>`).join("");
+  } catch (err) { listEl.innerHTML = `<p class="error-msg">${extractErrorMessage(err)}</p>`; }
+}
+async function cancelBooking(id) {
+  if (!confirm("Cancel this booking?")) return;
+  try { await api.post(`/bookings/${id}/cancel/`, {}); load(); } catch (err) { alert(extractErrorMessage(err)); }
+}
+load();
+</script>
+</body></html>

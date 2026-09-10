@@ -1,0 +1,27 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Charging History - EVCharge</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar" class="navbar"></div>
+<div class="container">
+  <h2 class="page-title">Charging History</h2>
+  <p class="page-subtitle">Your previous and upcoming charging sessions.</p>
+  <div id="history-list"><p class="empty-state">Loading...</p></div>
+</div>
+<script src="js/api.js"></script>
+<script>
+requireAuth(); renderNavbar("history");
+async function load() {
+  const listEl = document.getElementById("history-list");
+  try {
+    const items = await api.get("/history/");
+    if (!items.length) { listEl.innerHTML = `<p class="empty-state">No charging history yet.</p>`; return; }
+    listEl.innerHTML = items.map(h => `
+      <div class="card card-row">
+        <div><h3 style="margin:0 0 4px;">${h.station_name}</h3>
+          <div style="color:#64748b;font-size:0.85rem;">${h.date} · ${h.energy_consumed_kwh} kWh · ₹${h.amount_paid}</div></div>
+        <span class="badge badge-${h.status}">${h.status}</span>
+      </div>`).join("");
+  } catch (err) { listEl.innerHTML = `<p class="error-msg">${extractErrorMessage(err)}</p>`; }
+}
+load();
+</script>
+</body></html>

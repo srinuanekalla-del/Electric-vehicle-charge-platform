@@ -1,0 +1,33 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Booking Confirmed - EVCharge</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar" class="navbar"></div>
+<div class="container" style="max-width:480px;">
+  <div class="card text-center">
+    <div style="font-size:3rem;">✅</div>
+    <h2 style="color:#16a34a;">Booking Confirmed!</h2>
+    <div id="details" style="text-align:left;margin-top:20px;"><p class="empty-state">Loading...</p></div>
+    <a href="bookings.html" class="btn btn-primary btn-block mt-16">View My Bookings</a>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script>
+requireAuth(); renderNavbar();
+const params = new URLSearchParams(window.location.search);
+const bookingId = params.get("booking_id");
+
+async function loadDetails() {
+  try {
+    const b = await api.get(`/bookings/${bookingId}/`);
+    document.getElementById("details").innerHTML = `
+      <div class="card-row"><span>Booking ID</span><strong>#${b.id}</strong></div>
+      <div class="card-row" style="margin-top:8px;"><span>Station</span><strong>${b.station_name}</strong></div>
+      <div class="card-row" style="margin-top:8px;"><span>Charger</span><strong>${b.charger_label}</strong></div>
+      <div class="card-row" style="margin-top:8px;"><span>Date/Time</span><strong>${b.booking_date} ${b.start_time}</strong></div>
+      <div class="card-row" style="margin-top:8px;"><span>Amount</span><strong>₹${b.estimated_price}</strong></div>
+      <div class="card-row" style="margin-top:8px;"><span>Status</span><span class="badge badge-${b.status}">${b.status}</span></div>
+    `;
+  } catch (err) { document.getElementById("details").innerHTML = `<p class="error-msg">${extractErrorMessage(err)}</p>`; }
+}
+loadDetails();
+</script>
+</body></html>
