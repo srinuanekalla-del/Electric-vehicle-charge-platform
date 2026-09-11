@@ -1,6 +1,7 @@
 from datetime import timedelta
 from pathlib import Path
 from decouple import config
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -62,9 +63,21 @@ TEMPLATES = [
 WSGI_APPLICATION = 'evcharge_backend.wsgi.application'
 
 # --- Database ---------------------------------------------------------------
-# Defaults to MySQL, matching the project's chosen stack. Set USE_SQLITE=True
-# in your .env for quick local testing without a MySQL server running.
-if config("USE_SQLITE", default=False, cast=bool):
+# Priority:
+#   1. DATABASE_URL env var (set automatically by Render's PostgreSQL) — used
+#      in production/deployment.
+#   2. USE_SQLITE=True in .env — quick local testing without any DB server.
+#   3. Otherwise, falls back to local MySQL settings (DB_NAME, DB_USER, etc.)
+#      for local development, matching the original project setup.
+if config("DATABASE_URL", default=""):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=config("DATABASE_URL"),
+            conn_max_age=600,
+            ssl_require=True,
+        )
+    }
+elif config("USE_SQLITE", default=False, cast=bool):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -96,7 +109,14 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# --- Static files -------------------------------------------------------
+# STATIC_ROOT is required for `collectstatic` to work, which Render runs
+# automatically during the build step. Without this, the build fails with
+# "You're using the staticfiles app without having set the STATIC_ROOT
+# setting."
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
@@ -121,4 +141,7 @@ SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
 }
 
+# NOTE: fine for local development. Before exposing this publicly long-term,
+# replace this with CORS_ALLOWED_ORIGINS = ["https://your-frontend-domain.com"]
+# so only your actual frontend can make authenticated cross-origin requests.
 CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=True, cast=bool)
