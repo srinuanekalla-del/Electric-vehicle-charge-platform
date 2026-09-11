@@ -141,7 +141,6 @@ SWAGGER_SETTINGS = {
     },
     'USE_SESSION_AUTH': False,
 }
-
 # NOTE: fine for local development. Before exposing this publicly long-term,
 # replace this with CORS_ALLOWED_ORIGINS = ["https://your-frontend-domain.com"]
 # so only your actual frontend can make authenticated cross-origin requests.
